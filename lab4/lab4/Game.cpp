@@ -1,4 +1,4 @@
-// author Peter Lowe
+// @Author Michael Rainsford Ryan
 
 #include "Game.h"
 #include <iostream>
