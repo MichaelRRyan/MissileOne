@@ -9,6 +9,10 @@
 // Known bugs:
 // - Missile line occasionally briefly flashes in the previous position when the user clicks
 // again (drawing the missile before setting a new position for it)
+// - Asteroid line briefly flashes in the previous position when a new asteroid is launched
+// (drawing the asteroid before setting a new position for it)
+// - Explosion flashing to it's previous size when first appearing before shrinking again
+// (Drawing it before reseting the size)
 
 #include "Game.h"
 #include "MyVector2.h"
@@ -97,11 +101,14 @@ void Game::update(sf::Time t_deltaTime)
 		m_window.close();
 	}
 
+	
+	updateAltitudeBar(); // Update the altitude/missile power bar
+
 	if (m_currentMissileState == firedMissile)
 	{
 		updateMissile();
 	}
-	if (m_currentMissileState == explosion)
+	else if (m_currentMissileState == explosion)
 	{
 		updateExplosion();
 	}
@@ -188,10 +195,10 @@ void Game::setupShapes()
 	m_ground.setPosition(0.0f, m_groundHeight);
 	m_ground.setFillColor(sf::Color::Green);
 
-	// Setup the ground
-	m_altitudeBar.setSize(sf::Vector2f{ 400.0f, 25.0f });
+	// Setup the altitude bar
+	m_altitudeBar.setSize(sf::Vector2f{ m_groundHeight, 25.0f }); // Set the altitude width to the ground height for a measure of altitude
 	m_altitudeBar.setPosition(200.0f, 450.0f);
-	m_altitudeBar.setFillColor(sf::Color::White);
+	m_altitudeBar.setFillColor(sf::Color::Red);
 
 	// Setup the explosion
 	m_explosion.setRadius(1);
@@ -214,8 +221,15 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 	{
 		if (m_currentMissileState == readyToFire)
 		{
-			m_clickPosition = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
+			m_missileDestination = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
 			m_missilePosition = sf::Vector2f{ 400.0f, 445.0f };
+
+			if (m_missileDestination.y < m_groundHeight - m_missilePower) // Limit the missile height to the current missle power
+			{
+				m_missileDestination.y = m_groundHeight - m_missilePower;
+			}
+
+			m_missilePower = 0; // Reset the missile power
 			m_currentMissileState = firedMissile;
 		}
 	}
@@ -224,10 +238,10 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 // Update the missile's flight
 void Game::updateMissile()
 {
-	sf::Vector2f distanceVector = m_clickPosition - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
+	sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
 	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * m_missileSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
-	if (m_missilePosition.y > m_clickPosition.y)
+	if (m_missilePosition.y > m_missileDestination.y)
 	{
 		m_missilePosition += missileVelocity;
 		m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red };
@@ -309,4 +323,18 @@ bool Game::checkCollisions()
 	}
 	
 	return isColliding; // Return whether or not the asteroid is colliding with the explosion
+}
+
+// Update the altitude bar and power level for the missile
+void Game::updateAltitudeBar()
+{
+	if (m_currentMissileState != firedMissile) // If the missile has not been fired, increment the missile power
+	{
+		if (m_missilePower < m_groundHeight) // If the power reaches a max power, stop incrementing
+		{
+			m_missilePower++; // Increment the missile power
+		}
+	}
+
+	m_altitudeBar.setSize(sf::Vector2f{ m_missilePower, 25.0f }); // Set the altitude width to the ground height for a measure of altitude
 }

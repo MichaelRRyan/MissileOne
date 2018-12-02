@@ -26,6 +26,7 @@ private:
 	void updateMissile();
 	void updateExplosion();
 	void updateAsteroid();
+	void updateAltitudeBar();
 	bool checkCollisions();
 
 	// Declare the enums and bools
@@ -50,7 +51,7 @@ private:
 	sf::VertexArray m_asteroid{ sf::Lines }; // Asteroid array
 
 	// Declare vectors
-	sf::Vector2f m_clickPosition{ 0.0f, 0.0f }; // Location of the mouse click
+	sf::Vector2f m_missileDestination{ 0.0f, 0.0f }; // Location of the mouse click
 	sf::Vector2f m_missilePosition{ 0.0f, 0.0f }; // The location of the missile
 
 	sf::Vector2f m_asteroidPosition{ 0.0f, 0.0f }; // The location of the asteroid
@@ -61,11 +62,13 @@ private:
 	float m_groundHeight{ 445.0f }; // The height of the ground
 
 	float m_missileSpeed{ 1.0f }; // The speed multiplier of the missile
-	float m_asteroidSpeed{ 0.8f }; // The speed multiplier of the asteroid
+	float m_asteroidSpeed{ 0.5f }; // The speed multiplier of the asteroid
+
+	float m_missilePower{ 1.0f }; // The altitude at which the missile can reach
 
 	int m_asteroidLaunchTime{ 20 }; // The launch time for the asteroid. Set to 20 frames for the first asteroid
 
-	int m_explosionSize{ 1 }; // Current explosion size
+	int m_explosionSize{ 0 }; // Current explosion size
 	const int M_MAX_EXPLOSION_SIZE{ 30 }; // Maximum explosion size
 
 };
