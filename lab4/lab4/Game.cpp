@@ -2,9 +2,11 @@
 // C00239510
 // @Date 01/12/2018
 // Estimated time: 180m
-// Session 1: 23:17
+// Session 1: 23:17 - 23:59 - 01/12/2018
+// Session 2: 00:00 - 00:50 - 02/12/2018
 
 #include "Game.h"
+#include "MyVector2.h"
 #include <iostream>
 
 
@@ -61,16 +63,20 @@ void Game::processEvents()
 	sf::Event event;
 	while (m_window.pollEvent(event))
 	{
-		if (sf::Event::Closed == event.type) // window message
+		if (sf::Event::Closed == event.type) // Window message
 		{
 			m_window.close();
 		}
-		if (sf::Event::KeyPressed == event.type) //user key press
+		if (sf::Event::KeyPressed == event.type) // User key press
 		{
 			if (sf::Keyboard::Escape == event.key.code)
 			{
 				m_exitGame = true;
 			}
+		}
+		if (sf::Event::MouseButtonPressed == event.type) // User mouse press
+		{
+			processMouseEvents(event); // Separated into a new function to keep code tidy
 		}
 	}
 }
@@ -85,6 +91,8 @@ void Game::update(sf::Time t_deltaTime)
 	{
 		m_window.close();
 	}
+
+	updateMissile();
 }
 
 /// <summary>
@@ -154,9 +162,31 @@ void Game::setupShapes()
 	m_altitudeBar.setFillColor(sf::Color::White);
 
 	/// Temporary code
-	m_missile.append(sf::Vertex{ sf::Vector2f{ 0.0f, 0.0f } , sf::Color::Red });
+	m_missile.append(sf::Vertex{ sf::Vector2f{ 400.0f, 445.0f } , sf::Color::Red });
 	m_missile.append(sf::Vertex{ sf::Vector2f{ 60.0f, 80.0f } , sf::Color::Red });
 
 	m_asteroid.append(sf::Vertex{ sf::Vector2f{ 50.0f, 0.0f } , sf::Color::White });
 	m_asteroid.append(sf::Vertex{ sf::Vector2f{ 300.0f, 200.0f } , sf::Color::White });
+}
+
+// Process all input from the mouse
+void Game::processMouseEvents(sf::Event t_mouseEvent)
+{
+	if (sf::Mouse::Left == t_mouseEvent.mouseButton.button)
+	{
+		m_clickPosition = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
+		m_missilePosition = sf::Vector2f{ 400.0f, 445.0f };
+	}
+}
+
+void Game::updateMissile()
+{
+	sf::Vector2f distanceVector = m_clickPosition - sf::Vector2f{ 400.0f, 445.0f }; // Find the disance vector between the click point and the base
+	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * 2.0f; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
+
+	if (m_missilePosition.y > m_clickPosition.y)
+	{
+		m_missilePosition += missileVelocity;
+		m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red };
+	}
 }
