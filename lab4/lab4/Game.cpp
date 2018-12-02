@@ -4,6 +4,7 @@
 // Estimated time: 180m
 // Session 1: 23:17 - 23:59 - 01/12/2018
 // Session 2: 00:00 - 01:48 - 02/12/2018
+// Session 3: 12:10 -
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // Known bugs:
 // - Missile line occasionally briefly flashes in the previous position when the user clicks
@@ -105,7 +106,14 @@ void Game::update(sf::Time t_deltaTime)
 		updateExplosion();
 	}
 
-	updateAsteroid();
+	if (!m_asteroidInPlay) // Launch the asteroid if there are none in play
+	{
+		launchAsteroid();
+	}
+	else // Move the asteroid
+	{
+		updateAsteroid();
+	}
 }
 
 /// <summary>
@@ -117,7 +125,10 @@ void Game::render()
 	m_window.draw(m_ground);
 	m_window.draw(m_base);
 	m_window.draw(m_altitudeBar);
-	m_window.draw(m_asteroid);
+	if (m_asteroidInPlay)
+	{
+		m_window.draw(m_asteroid);
+	}
 	if (m_currentMissileState == firedMissile)
 	{
 		m_window.draw(m_missile);
@@ -164,6 +175,7 @@ void Game::setupSprite()
 	m_logoSprite.setPosition(300.0f, 180.0f);
 }
 
+// Setup all the shapes and lines
 void Game::setupShapes()
 {
 	// Setup the base
@@ -209,10 +221,11 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 	}
 }
 
+// Update the missile's flight
 void Game::updateMissile()
 {
 	sf::Vector2f distanceVector = m_clickPosition - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
-	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * 2.0f; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
+	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * m_missileSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
 	if (m_missilePosition.y > m_clickPosition.y)
 	{
@@ -227,41 +240,73 @@ void Game::updateMissile()
 	}
 }
 
+// Update the explosion and collision
 void Game::updateExplosion()
 {
-	m_explosionSize++;
-	m_explosion.setRadius(m_explosionSize);
-	m_explosion.setOrigin(m_explosion.getRadius(), m_explosion.getRadius());
+	m_explosionSize++; // Increase the explosions radius size
+	m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
+	m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
 
-	if (m_explosionSize >= M_MAX_EXPLOSION_SIZE)
+	if (m_asteroidInPlay) // If the asteroid is in play, check collisions
 	{
-		m_currentMissileState = readyToFire;
+		if (checkCollisions()) // If colliding with the asteroid
+		{
+			m_asteroidInPlay = false; // Set the asteroid to no longer in play
+			m_asteroidLaunchTime = rand() % 90 + 30; // Set the asteroid launch time to a random number between 30 and 120 frames
+		}
+	}
+
+	if (m_explosionSize >= M_MAX_EXPLOSION_SIZE) // If the explosion reaches its max size, remove it
+	{
+		m_currentMissileState = readyToFire; // Allow the player to launch another missile
 	}
 }
 
-void Game::updateAsteroid()
+// Launch an asteroid
+void Game::launchAsteroid()
 {
-	if (!asteroidInPlay)
+	if (m_asteroidLaunchTime > 0)
+	{
+		m_asteroidLaunchTime--;
+	}
+	else
 	{
 		m_asteroidStartPosition = sf::Vector2f{ static_cast<float>(rand() % 500 + 150), 0.0f };
 		m_asteroidEndPosition = sf::Vector2f{ static_cast<float>(rand() % 500 + 150), m_groundHeight };
 		m_asteroidPosition = m_asteroidStartPosition;
-		m_asteroid[0] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
-		asteroidInPlay = true;
-	}
-	else
-	{
-		sf::Vector2f distanceVector = m_asteroidEndPosition - m_asteroidStartPosition; // Find the disance vector between the asteroid's end point and its beginning point
-		sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * 2.0f; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
-		if (m_asteroidPosition.y < m_groundHeight)
-		{
+		m_asteroid[0] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
+		m_asteroidInPlay = true;
+	}
+}
+
+// Update the asteroid's flight
+void Game::updateAsteroid()
+{
+	sf::Vector2f distanceVector = m_asteroidEndPosition - m_asteroidStartPosition; // Find the disance vector between the asteroid's end point and its beginning point
+	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * m_asteroidSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
+
+	if (m_asteroidPosition.y < m_groundHeight) // Move the asteroid if it hasn't hit the ground
+	{
 			m_asteroidPosition += missileVelocity;
 			m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
-		}
-		else
-		{
-			asteroidInPlay = false;
-		}
 	}
+	else // Destroy the asteroid if it hits the ground
+	{
+			m_asteroidInPlay = false;
+	}
+}
+
+// Check for collisions between asteroid and missile
+bool Game::checkCollisions()
+{
+	bool isColliding{ false }; // The bool that will be returned
+	sf::Vector2f distanceVector = m_asteroidPosition - m_explosion.getPosition(); // Find the distance vector between the asteroid and the explosion
+
+	if (vectorLengthSquared(distanceVector) < m_explosion.getRadius() * m_explosion.getRadius()) // Check of the distance length squared is less than the radius squared
+	{
+		isColliding = true;
+	}
+	
+	return isColliding; // Return whether or not the asteroid is colliding with the explosion
 }
