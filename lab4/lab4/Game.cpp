@@ -1,4 +1,8 @@
 // @Author Michael Rainsford Ryan
+// C00239510
+// @Date 01/12/2018
+// Estimated time: 180m
+// Session 1: 23:17
 
 #include "Game.h"
 #include <iostream>
@@ -9,11 +13,12 @@
 /// pass parameters fpr sfml window, setup m_exitGame
 /// </summary>
 Game::Game() :
-	m_window{ sf::VideoMode{ 800, 600, 32 }, "SFML Game" },
+	m_window{ sf::VideoMode{ 800, 480, 32 }, "SFML Game" },
 	m_exitGame{ false } //when true game will exit
 {
 	setupFontAndText(); // load font 
 	setupSprite(); // load texture
+	setupShapes();
 }
 
 /// <summary>
@@ -87,9 +92,13 @@ void Game::update(sf::Time t_deltaTime)
 /// </summary>
 void Game::render()
 {
-	m_window.clear(sf::Color::White);
-	m_window.draw(m_welcomeMessage);
-	m_window.draw(m_logoSprite);
+	m_window.clear();
+	m_window.draw(m_ground);
+	m_window.draw(m_base);
+	m_window.draw(m_altitudeBar);
+	m_window.draw(m_missile);
+	m_window.draw(m_asteroid);
+	m_window.draw(m_altitudeText);
 	m_window.display();
 }
 
@@ -102,14 +111,14 @@ void Game::setupFontAndText()
 	{
 		std::cout << "problem loading arial black font" << std::endl;
 	}
-	m_welcomeMessage.setFont(m_ArialBlackfont);
-	m_welcomeMessage.setString("SFML Game");
-	m_welcomeMessage.setStyle(sf::Text::Underlined | sf::Text::Italic | sf::Text::Bold);
-	m_welcomeMessage.setPosition(40.0f, 40.0f);
-	m_welcomeMessage.setCharacterSize(80);
-	m_welcomeMessage.setOutlineColor(sf::Color::Red);
-	m_welcomeMessage.setFillColor(sf::Color::Black);
-	m_welcomeMessage.setOutlineThickness(3.0f);
+	m_altitudeText.setFont(m_ArialBlackfont);
+	m_altitudeText.setString("Altitude:");
+	m_altitudeText.setStyle( sf::Text::Italic );
+	m_altitudeText.setPosition(40.0f, 445.0f);
+	m_altitudeText.setCharacterSize(25);
+	m_altitudeText.setOutlineColor(sf::Color::Black);
+	m_altitudeText.setFillColor(sf::Color::White);
+	m_altitudeText.setOutlineThickness(1.0f);
 
 }
 
@@ -125,4 +134,29 @@ void Game::setupSprite()
 	}
 	m_logoSprite.setTexture(m_logoTexture);
 	m_logoSprite.setPosition(300.0f, 180.0f);
+}
+
+void Game::setupShapes()
+{
+	// Setup the base
+	m_base.setSize(sf::Vector2f{ 50.0f, 50.0f });
+	m_base.setPosition(375.0f, 395.0f);
+	m_base.setFillColor(sf::Color::Yellow);
+
+	// Setup the ground
+	m_ground.setSize(sf::Vector2f{ 800.0f, 35.0f });
+	m_ground.setPosition(0.0f, 445.0f);
+	m_ground.setFillColor(sf::Color::Green);
+
+	// Setup the ground
+	m_altitudeBar.setSize(sf::Vector2f{ 400.0f, 25.0f });
+	m_altitudeBar.setPosition(200.0f, 450.0f);
+	m_altitudeBar.setFillColor(sf::Color::White);
+
+	/// Temporary code
+	m_missile.append(sf::Vertex{ sf::Vector2f{ 0.0f, 0.0f } , sf::Color::Red });
+	m_missile.append(sf::Vertex{ sf::Vector2f{ 60.0f, 80.0f } , sf::Color::Red });
+
+	m_asteroid.append(sf::Vertex{ sf::Vector2f{ 50.0f, 0.0f } , sf::Color::White });
+	m_asteroid.append(sf::Vertex{ sf::Vector2f{ 300.0f, 200.0f } , sf::Color::White });
 }
