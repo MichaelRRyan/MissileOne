@@ -4,7 +4,9 @@
 // Estimated time: 180m
 // Session 1: 23:17 - 23:59 - 01/12/2018
 // Session 2: 00:00 - 01:48 - 02/12/2018
-// Session 3: 12:10 -
+// Session 3: 12:10 - 13:34 - 02/12/2018
+// Session 4: 13:41 - 13:51 - 02/12/2018
+// Session 5: 23:51 -  - 02/12/2018
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // Known bugs:
 // - Missile line occasionally briefly flashes in the previous position when the user clicks
@@ -13,6 +15,7 @@
 // (drawing the asteroid before setting a new position for it)
 // - Explosion flashing to it's previous size when first appearing before shrinking again
 // (Drawing it before reseting the size)
+// - Only limits the y of the missile so the shot isn't aimed correctly
 
 #include "Game.h"
 #include "MyVector2.h"
@@ -28,7 +31,7 @@ Game::Game() :
 	m_exitGame{ false } //when true game will exit
 {
 	setupFontAndText(); // load font 
-	setupSprite(); // load texture
+	//setupSprite(); // load texture
 	setupShapes();
 }
 
@@ -101,26 +104,30 @@ void Game::update(sf::Time t_deltaTime)
 		m_window.close();
 	}
 
-	
-	updateAltitudeBar(); // Update the altitude/missile power bar
+	if (!m_gameOver) // If the game hasn't ended, do the main game updates
+	{
+		updateAltitudeBar(); // Update the altitude/missile power bar
 
-	if (m_currentMissileState == firedMissile)
-	{
-		updateMissile();
-	}
-	else if (m_currentMissileState == explosion)
-	{
-		updateExplosion();
+		if (m_currentMissileState == firedMissile)
+		{
+			updateMissile();
+		}
+		else if (m_currentMissileState == explosion)
+		{
+			updateExplosion();
+		}
+
+		if (!m_asteroidInPlay) // Launch the asteroid if there are none in play
+		{
+			launchAsteroid();
+		}
+		else // Move the asteroid
+		{
+			updateAsteroid();
+		}
 	}
 
-	if (!m_asteroidInPlay) // Launch the asteroid if there are none in play
-	{
-		launchAsteroid();
-	}
-	else // Move the asteroid
-	{
-		updateAsteroid();
-	}
+	m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
 }
 
 /// <summary>
@@ -132,6 +139,8 @@ void Game::render()
 	m_window.draw(m_ground);
 	m_window.draw(m_base);
 	m_window.draw(m_altitudeBar);
+
+	// Draw the asteroid and missile stuff
 	if (m_asteroidInPlay)
 	{
 		m_window.draw(m_asteroid);
@@ -144,7 +153,16 @@ void Game::render()
 	{
 		m_window.draw(m_explosion);
 	}
+
+	// Draw the text
 	m_window.draw(m_altitudeText);
+	m_window.draw(m_scoreText);
+
+	if (m_gameOver)
+	{
+		m_window.draw(m_gameOverText);
+	}
+
 	m_window.display();
 }
 
@@ -157,6 +175,7 @@ void Game::setupFontAndText()
 	{
 		std::cout << "problem loading arial black font" << std::endl;
 	}
+	// Draw the altitude text
 	m_altitudeText.setFont(m_ArialBlackfont);
 	m_altitudeText.setString("Altitude:");
 	m_altitudeText.setStyle( sf::Text::Italic );
@@ -166,28 +185,41 @@ void Game::setupFontAndText()
 	m_altitudeText.setFillColor(sf::Color::White);
 	m_altitudeText.setOutlineThickness(1.0f);
 
+	// Setup the score text
+	m_scoreText.setFont(m_ArialBlackfont);
+	m_scoreText.setString("Score: " + std::to_string(m_score));
+	m_scoreText.setPosition(10.0f, 10.0f);
+	m_scoreText.setCharacterSize(20);
+	m_scoreText.setFillColor(sf::Color::White);
+
+	// Setup the game over text
+	m_gameOverText.setFont(m_ArialBlackfont);
+	m_gameOverText.setString("GAME OVER!");
+	m_gameOverText.setPosition(200.0f, 200.0f);
+	m_gameOverText.setCharacterSize(50);
+	m_gameOverText.setFillColor(sf::Color::Yellow);
 }
 
-/// <summary>
-/// load the texture and setup the sprite for the logo
-/// </summary>
-void Game::setupSprite()
-{
-	if (!m_logoTexture.loadFromFile("ASSETS\\IMAGES\\SFML-LOGO.png"))
-	{
-		// simple error message if previous call fails
-		std::cout << "problem loading logo" << std::endl;
-	}
-	m_logoSprite.setTexture(m_logoTexture);
-	m_logoSprite.setPosition(300.0f, 180.0f);
-}
+///// <summary>
+///// load the texture and setup the sprite for the logo
+///// </summary>
+//void Game::setupSprite()
+//{
+//	if (!m_logoTexture.loadFromFile("ASSETS\\IMAGES\\SFML-LOGO.png"))
+//	{
+//		// simple error message if previous call fails
+//		std::cout << "problem loading logo" << std::endl;
+//	}
+//	m_logoSprite.setTexture(m_logoTexture);
+//	m_logoSprite.setPosition(300.0f, 180.0f);
+//}
 
 // Setup all the shapes and lines
 void Game::setupShapes()
 {
 	// Setup the base
-	m_base.setSize(sf::Vector2f{ 50.0f, 50.0f });
-	m_base.setPosition(375.0f, 395.0f);
+	m_base.setSize(sf::Vector2f{ 40.0f, 40.0f });
+	m_base.setPosition(380.0f, 405.0f);
 	m_base.setFillColor(sf::Color::Yellow);
 
 	// Setup the ground
@@ -267,6 +299,7 @@ void Game::updateExplosion()
 		{
 			m_asteroidInPlay = false; // Set the asteroid to no longer in play
 			m_asteroidLaunchTime = rand() % 90 + 30; // Set the asteroid launch time to a random number between 30 and 120 frames
+			m_score += 5; // Add to the score when an asteroid is destroyed
 		}
 	}
 
@@ -302,12 +335,13 @@ void Game::updateAsteroid()
 
 	if (m_asteroidPosition.y < m_groundHeight) // Move the asteroid if it hasn't hit the ground
 	{
-			m_asteroidPosition += missileVelocity;
-			m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
+		m_asteroidPosition += missileVelocity;
+		m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
 	}
 	else // Destroy the asteroid if it hits the ground
 	{
-			m_asteroidInPlay = false;
+		//m_asteroidInPlay = false;
+		m_gameOver = true;
 	}
 }
 

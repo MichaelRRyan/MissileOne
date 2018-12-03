@@ -19,7 +19,7 @@ private:
 	void render();
 
 	void setupFontAndText();
-	void setupSprite();
+	//void setupSprite();
 	void setupShapes();
 
 	void launchAsteroid();
@@ -34,13 +34,14 @@ private:
 	missileState m_currentMissileState{ readyToFire }; // A enum variable of the missile state
 
 	bool m_asteroidInPlay{ false }; // To check if the asteroid is in play
+	bool m_gameOver{ false }; // To check if the game is in progress/to end the game
 	bool m_exitGame; // control exiting game
 
 	sf::RenderWindow m_window; // main SFML window
 	sf::Font m_ArialBlackfont; // font used by message
 	sf::Text m_altitudeText; // text used for altitude
-	sf::Texture m_logoTexture; // texture used for sfml logo
-	sf::Sprite m_logoSprite; // sprite used for sfml logo
+	sf::Text m_scoreText; // Text used for the player's score
+	sf::Text m_gameOverText; // Text object used to display the game over text
 
 	// Declare shapes and lines
 	sf::RectangleShape m_ground; // Ground plain shape
@@ -60,14 +61,12 @@ private:
 
 	// Declare single variables
 	float m_groundHeight{ 445.0f }; // The height of the ground
-
-	float m_missileSpeed{ 1.0f }; // The speed multiplier of the missile
-	float m_asteroidSpeed{ 0.5f }; // The speed multiplier of the asteroid
-
+	float m_missileSpeed{ 2.0f }; // The speed multiplier of the missile
+	float m_asteroidSpeed{ 0.8f }; // The speed multiplier of the asteroid
 	float m_missilePower{ 1.0f }; // The altitude at which the missile can reach
 
+	int m_score{ 0 }; // The players score
 	int m_asteroidLaunchTime{ 20 }; // The launch time for the asteroid. Set to 20 frames for the first asteroid
-
 	int m_explosionSize{ 0 }; // Current explosion size
 	const int M_MAX_EXPLOSION_SIZE{ 30 }; // Maximum explosion size
 
