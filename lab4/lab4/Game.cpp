@@ -6,16 +6,11 @@
 // Session 2: 00:00 - 01:48 - 02/12/2018
 // Session 3: 12:10 - 13:34 - 02/12/2018
 // Session 4: 13:41 - 13:51 - 02/12/2018
-// Session 5: 23:51 -  - 02/12/2018
+// Session 5: 23:51 - 00:15 - 02-03/12/2018
+// Session 6: 17:45 - 18:00 - 04/12/2018
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // Known bugs:
-// - Missile line occasionally briefly flashes in the previous position when the user clicks
-// again (drawing the missile before setting a new position for it)
-// - Asteroid line briefly flashes in the previous position when a new asteroid is launched
-// (drawing the asteroid before setting a new position for it)
-// - Explosion flashing to it's previous size when first appearing before shrinking again
-// (Drawing it before reseting the size)
-// - Only limits the y of the missile so the shot isn't aimed correctly
+// - None
 
 #include "Game.h"
 #include "MyVector2.h"
@@ -254,15 +249,13 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 		if (m_currentMissileState == readyToFire)
 		{
 			m_missileDestination = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
-			m_missilePosition = sf::Vector2f{ 400.0f, 445.0f };
+			m_missilePosition = sf::Vector2f{ 400.0f, m_groundHeight }; // Set the missile's start position to the base position
+			m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red }; // Set the missile's line start position
 
-			if (m_missileDestination.y < m_groundHeight - m_missilePower) // Limit the missile height to the current missle power
-			{
-				m_missileDestination.y = m_groundHeight - m_missilePower;
-			}
+			sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
+			m_missileVelocity = vectorUnitVector(distanceVector) * m_missileSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
-			m_missilePower = 0; // Reset the missile power
-			m_currentMissileState = firedMissile;
+			m_currentMissileState = firedMissile; // Change the missile state
 		}
 	}
 }
@@ -270,19 +263,20 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 // Update the missile's flight
 void Game::updateMissile()
 {
-	sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
-	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * m_missileSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
-
-	if (m_missilePosition.y > m_missileDestination.y)
+	if (m_missilePosition.y > m_missileDestination.y && m_missilePosition.y > m_groundHeight - m_missilePower) // If the missile reaches the mouse click position or the max altitude
 	{
-		m_missilePosition += missileVelocity;
-		m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red };
+		m_missilePosition += m_missileVelocity; // Add the velocity to the missile's position
+		m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red }; // Update the missile line's position
 	}
-	else
+	else // once the missile reaches it's end position
 	{
 		m_explosion.setPosition(m_missilePosition);
-		m_explosionSize = 1;
+		m_explosionSize = 0; // Reset the explosion size
+		m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
+		m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
+		m_missilePower = 0;
 		m_currentMissileState = explosion;
+		
 	}
 }
 
@@ -318,11 +312,18 @@ void Game::launchAsteroid()
 	}
 	else
 	{
-		m_asteroidStartPosition = sf::Vector2f{ static_cast<float>(rand() % 500 + 150), 0.0f };
-		m_asteroidEndPosition = sf::Vector2f{ static_cast<float>(rand() % 500 + 150), m_groundHeight };
-		m_asteroidPosition = m_asteroidStartPosition;
+		// Set a random start and end point for the asteroid
+		sf::Vector2f asteroidStartPosition{ static_cast<float>(rand() % 700 + 50), 0.0f };
+		sf::Vector2f asteroidEndPosition{ static_cast<float>(rand() % 700 + 50), m_groundHeight };
+		
+		// Find the asteroids velocity
+		sf::Vector2f distanceVector = asteroidEndPosition - asteroidStartPosition; // Find the disance vector between the asteroid's end point and its beginning point
+		m_asteroidVelocity = vectorUnitVector(distanceVector) * m_asteroidSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
+		// Initiate the asteroid to the start position
+		m_asteroidPosition = asteroidStartPosition;
 		m_asteroid[0] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
+		m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
 		m_asteroidInPlay = true;
 	}
 }
@@ -330,12 +331,9 @@ void Game::launchAsteroid()
 // Update the asteroid's flight
 void Game::updateAsteroid()
 {
-	sf::Vector2f distanceVector = m_asteroidEndPosition - m_asteroidStartPosition; // Find the disance vector between the asteroid's end point and its beginning point
-	sf::Vector2f missileVelocity = vectorUnitVector(distanceVector) * m_asteroidSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
-
 	if (m_asteroidPosition.y < m_groundHeight) // Move the asteroid if it hasn't hit the ground
 	{
-		m_asteroidPosition += missileVelocity;
+		m_asteroidPosition += m_asteroidVelocity;
 		m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
 	}
 	else // Destroy the asteroid if it hits the ground
