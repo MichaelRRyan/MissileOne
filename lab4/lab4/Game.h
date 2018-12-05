@@ -3,6 +3,21 @@
 #define GAME
 
 #include <SFML/Graphics.hpp>
+#include <cstdlib>
+#include <ctime>
+
+enum class MissileStates  // Enum class for the missile state
+{
+	ReadyToFire,
+	FiredMissile,
+	Explosion
+};
+
+// Declare the constants
+const float GROUND_HEIGHT{ 445.0f }; // The height of the ground
+const float MISSILE_SPEED{ 2.0f }; // The speed multiplier of the missile
+const float ASTEROID_SPEED{ 0.8f }; // The speed multiplier of the asteroid
+const float MAX_EXPLOSION_SIZE{ 30.0f }; // Maximum explosion size
 
 class Game
 {
@@ -19,7 +34,7 @@ private:
 	void render();
 
 	void setupFontAndText();
-	//void setupSprite();
+	void setupSprite();
 	void setupShapes();
 
 	void launchAsteroid();
@@ -30,8 +45,7 @@ private:
 	bool checkCollisions();
 
 	// Declare the enums and bools
-	enum missileState{ readyToFire, firedMissile, explosion }; // Enum class for the missile state
-	missileState m_currentMissileState{ readyToFire }; // A enum variable of the missile state
+	MissileStates m_currentMissileState{}; // A enum variable of the missile state
 
 	bool m_asteroidInPlay{ false }; // To check if the asteroid is in play
 	bool m_gameOver{ false }; // To check if the game is in progress/to end the game
@@ -42,6 +56,10 @@ private:
 	sf::Text m_altitudeText; // text used for altitude
 	sf::Text m_scoreText; // Text used for the player's score
 	sf::Text m_gameOverText; // Text object used to display the game over text
+
+	// Declare textures and sprites
+	sf::Texture m_skylineTexture;
+	sf::Sprite m_skylineSprite;
 
 	// Declare shapes and lines
 	sf::RectangleShape m_ground; // Ground plain shape
@@ -60,15 +78,12 @@ private:
 	sf::Vector2f m_asteroidVelocity{ 0.0f, 0.0f }; // The velocity of the asteroid
 
 	// Declare single variables
-	float m_groundHeight{ 445.0f }; // The height of the ground
-	float m_missileSpeed{ 2.0f }; // The speed multiplier of the missile
-	float m_asteroidSpeed{ 0.8f }; // The speed multiplier of the asteroid
 	float m_missilePower{ 1.0f }; // The altitude at which the missile can reach
 	float m_explosionSize{ 0.0f }; // Current explosion size
 
 	int m_score{ 0 }; // The players score
 	int m_asteroidLaunchTime{ 20 }; // The launch time for the asteroid. Set to 20 frames for the first asteroid
-	const int M_MAX_EXPLOSION_SIZE{ 30 }; // Maximum explosion size
+	
 
 };
 

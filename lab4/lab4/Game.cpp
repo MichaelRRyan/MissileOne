@@ -8,6 +8,11 @@
 // Session 4: 13:41 - 13:51 - 02/12/2018
 // Session 5: 23:51 - 00:15 - 02-03/12/2018
 // Session 6: 17:45 - 18:00 - 04/12/2018
+// Time to finish project: 223m
+
+// Extra fun stuff
+// Estimated time: 120m
+// Session 7: 22:20 - 22:40 - 05/12/2018
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // Known bugs:
 // - None
@@ -23,11 +28,12 @@
 /// </summary>
 Game::Game() :
 	m_window{ sf::VideoMode{ 800, 480, 32 }, "SFML Game" },
-	m_exitGame{ false } //when true game will exit
+	m_exitGame{ false }, //when true game will exit
+	m_currentMissileState{ MissileStates::ReadyToFire }
 {
 	setupFontAndText(); // load font 
-	//setupSprite(); // load texture
-	setupShapes();
+	setupSprite(); // load texture
+	setupShapes(); // Setup the shapes and lines
 }
 
 /// <summary>
@@ -103,11 +109,11 @@ void Game::update(sf::Time t_deltaTime)
 	{
 		updateAltitudeBar(); // Update the altitude/missile power bar
 
-		if (m_currentMissileState == firedMissile)
+		if (m_currentMissileState == MissileStates::FiredMissile)
 		{
 			updateMissile();
 		}
-		else if (m_currentMissileState == explosion)
+		else if (m_currentMissileState == MissileStates::Explosion)
 		{
 			updateExplosion();
 		}
@@ -132,6 +138,10 @@ void Game::render()
 {
 	m_window.clear();
 	m_window.draw(m_ground);
+
+	// Draw the sprites
+	//m_window.draw(m_skylineSprite);
+
 	m_window.draw(m_base);
 	m_window.draw(m_altitudeBar);
 
@@ -140,11 +150,11 @@ void Game::render()
 	{
 		m_window.draw(m_asteroid);
 	}
-	if (m_currentMissileState == firedMissile)
+	if (m_currentMissileState == MissileStates::FiredMissile)
 	{
 		m_window.draw(m_missile);
 	}
-	if (m_currentMissileState == explosion)
+	if (m_currentMissileState == MissileStates::Explosion)
 	{
 		m_window.draw(m_explosion);
 	}
@@ -172,10 +182,9 @@ void Game::setupFontAndText()
 	}
 	// Draw the altitude text
 	m_altitudeText.setFont(m_ArialBlackfont);
-	m_altitudeText.setString("Altitude:");
-	m_altitudeText.setStyle( sf::Text::Italic );
-	m_altitudeText.setPosition(40.0f, 445.0f);
-	m_altitudeText.setCharacterSize(25);
+	m_altitudeText.setString("ALTITUDE:");
+	m_altitudeText.setPosition(10.0f, 450.0f);
+	m_altitudeText.setCharacterSize(20);
 	m_altitudeText.setOutlineColor(sf::Color::Black);
 	m_altitudeText.setFillColor(sf::Color::White);
 	m_altitudeText.setOutlineThickness(1.0f);
@@ -195,20 +204,6 @@ void Game::setupFontAndText()
 	m_gameOverText.setFillColor(sf::Color::Yellow);
 }
 
-///// <summary>
-///// load the texture and setup the sprite for the logo
-///// </summary>
-//void Game::setupSprite()
-//{
-//	if (!m_logoTexture.loadFromFile("ASSETS\\IMAGES\\SFML-LOGO.png"))
-//	{
-//		// simple error message if previous call fails
-//		std::cout << "problem loading logo" << std::endl;
-//	}
-//	m_logoSprite.setTexture(m_logoTexture);
-//	m_logoSprite.setPosition(300.0f, 180.0f);
-//}
-
 // Setup all the shapes and lines
 void Game::setupShapes()
 {
@@ -219,13 +214,15 @@ void Game::setupShapes()
 
 	// Setup the ground
 	m_ground.setSize(sf::Vector2f{ 800.0f, 35.0f });
-	m_ground.setPosition(0.0f, m_groundHeight);
+	m_ground.setPosition(0.0f, GROUND_HEIGHT);
 	m_ground.setFillColor(sf::Color::Green);
 
 	// Setup the altitude bar
-	m_altitudeBar.setSize(sf::Vector2f{ m_groundHeight, 25.0f }); // Set the altitude width to the ground height for a measure of altitude
-	m_altitudeBar.setPosition(200.0f, 450.0f);
-	m_altitudeBar.setFillColor(sf::Color::Red);
+	m_altitudeBar.setSize(sf::Vector2f{ GROUND_HEIGHT, 18.0f }); // Set the altitude width to the ground height for a measure of altitude
+	m_altitudeBar.setPosition(140.0f, 454.0f);
+	m_altitudeBar.setFillColor(sf::Color::Yellow);
+	m_altitudeBar.setOutlineColor(sf::Color::Black);
+	m_altitudeBar.setOutlineThickness(2.0f);
 
 	// Setup the explosion
 	m_explosion.setRadius(1);
@@ -233,7 +230,7 @@ void Game::setupShapes()
 	m_explosion.setOrigin(m_explosion.getRadius(), m_explosion.getRadius());
 	m_explosion.setFillColor(sf::Color::Red);
 
-	/// Temporary code
+	// Setup the lines
 	m_missile.append(sf::Vertex{ sf::Vector2f{ 400.0f, 445.0f } , sf::Color::Red });
 	m_missile.append(sf::Vertex{ sf::Vector2f{ 60.0f, 80.0f } , sf::Color::Red });
 
@@ -246,16 +243,16 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 {
 	if (sf::Mouse::Left == t_mouseEvent.mouseButton.button)
 	{
-		if (m_currentMissileState == readyToFire)
+		if (m_currentMissileState == MissileStates::ReadyToFire)
 		{
 			m_missileDestination = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
-			m_missilePosition = sf::Vector2f{ 400.0f, m_groundHeight }; // Set the missile's start position to the base position
+			m_missilePosition = sf::Vector2f{ 400.0f, GROUND_HEIGHT }; // Set the missile's start position to the base position
 			m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red }; // Set the missile's line start position
 
-			sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, m_groundHeight }; // Find the disance vector between the click point and the base
-			m_missileVelocity = vectorUnitVector(distanceVector) * m_missileSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
+			sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, GROUND_HEIGHT }; // Find the disance vector between the click point and the base
+			m_missileVelocity = vectorUnitVector(distanceVector) * MISSILE_SPEED; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
-			m_currentMissileState = firedMissile; // Change the missile state
+			m_currentMissileState = MissileStates::FiredMissile; // Change the missile state
 		}
 	}
 }
@@ -263,7 +260,7 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 // Update the missile's flight
 void Game::updateMissile()
 {
-	if (m_missilePosition.y > m_missileDestination.y && m_missilePosition.y > m_groundHeight - m_missilePower) // If the missile reaches the mouse click position or the max altitude
+	if (m_missilePosition.y > m_missileDestination.y && m_missilePosition.y > GROUND_HEIGHT - m_missilePower) // If the missile reaches the mouse click position or the max altitude
 	{
 		m_missilePosition += m_missileVelocity; // Add the velocity to the missile's position
 		m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red }; // Update the missile line's position
@@ -275,7 +272,7 @@ void Game::updateMissile()
 		m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
 		m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
 		m_missilePower = 0;
-		m_currentMissileState = explosion;
+		m_currentMissileState = MissileStates::Explosion;
 		
 	}
 }
@@ -291,15 +288,20 @@ void Game::updateExplosion()
 	{
 		if (checkCollisions()) // If colliding with the asteroid
 		{
+			int minimumTime = 120 - m_score; // Set a minimum time for the asteroid to spawn, this will also decrease the maximum time
+			if (minimumTime < 0) // If the time is a negative value, make it zero
+			{
+				minimumTime = 0;
+			}
 			m_asteroidInPlay = false; // Set the asteroid to no longer in play
-			m_asteroidLaunchTime = rand() % 90 + 30; // Set the asteroid launch time to a random number between 30 and 120 frames
+			m_asteroidLaunchTime = rand() % 90 + minimumTime; // Set the asteroid launch time to a random number based on the player's current score
 			m_score += 5; // Add to the score when an asteroid is destroyed
 		}
 	}
 
-	if (m_explosionSize >= M_MAX_EXPLOSION_SIZE) // If the explosion reaches its max size, remove it
+	if (m_explosionSize >= MAX_EXPLOSION_SIZE) // If the explosion reaches its max size, remove it
 	{
-		m_currentMissileState = readyToFire; // Allow the player to launch another missile
+		m_currentMissileState = MissileStates::ReadyToFire; // Allow the player to launch another missile
 	}
 }
 
@@ -314,11 +316,11 @@ void Game::launchAsteroid()
 	{
 		// Set a random start and end point for the asteroid
 		sf::Vector2f asteroidStartPosition{ static_cast<float>(rand() % 700 + 50), 0.0f };
-		sf::Vector2f asteroidEndPosition{ static_cast<float>(rand() % 700 + 50), m_groundHeight };
+		sf::Vector2f asteroidEndPosition{ static_cast<float>(rand() % 700 + 50), GROUND_HEIGHT };
 		
 		// Find the asteroids velocity
 		sf::Vector2f distanceVector = asteroidEndPosition - asteroidStartPosition; // Find the disance vector between the asteroid's end point and its beginning point
-		m_asteroidVelocity = vectorUnitVector(distanceVector) * m_asteroidSpeed; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
+		m_asteroidVelocity = vectorUnitVector(distanceVector) * ASTEROID_SPEED; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
 		// Initiate the asteroid to the start position
 		m_asteroidPosition = asteroidStartPosition;
@@ -331,7 +333,7 @@ void Game::launchAsteroid()
 // Update the asteroid's flight
 void Game::updateAsteroid()
 {
-	if (m_asteroidPosition.y < m_groundHeight) // Move the asteroid if it hasn't hit the ground
+	if (m_asteroidPosition.y < GROUND_HEIGHT) // Move the asteroid if it hasn't hit the ground
 	{
 		m_asteroidPosition += m_asteroidVelocity;
 		m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
@@ -360,13 +362,27 @@ bool Game::checkCollisions()
 // Update the altitude bar and power level for the missile
 void Game::updateAltitudeBar()
 {
-	if (m_currentMissileState != firedMissile) // If the missile has not been fired, increment the missile power
+	if (m_currentMissileState != MissileStates::FiredMissile) // If the missile has not been fired, increment the missile power
 	{
-		if (m_missilePower < m_groundHeight) // If the power reaches a max power, stop incrementing
+		if (m_missilePower < GROUND_HEIGHT) // If the power reaches a max power, stop incrementing
 		{
 			m_missilePower++; // Increment the missile power
 		}
 	}
 
-	m_altitudeBar.setSize(sf::Vector2f{ m_missilePower, 25.0f }); // Set the altitude width to the ground height for a measure of altitude
+	m_altitudeBar.setSize(sf::Vector2f{ m_missilePower, m_altitudeBar.getSize().y }); // Set the altitude width to the ground height for a measure of altitude
+}
+
+/// <summary>
+/// load the texture and setup the sprite for the logo
+/// </summary>
+void Game::setupSprite()
+{
+	if (!m_skylineTexture.loadFromFile("ASSETS\\IMAGES\\skyline.png"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading logo" << std::endl;
+	}
+	m_skylineSprite.setTexture(m_skylineTexture);
+	m_skylineSprite.setPosition(0.0f, 390.0f);
 }
