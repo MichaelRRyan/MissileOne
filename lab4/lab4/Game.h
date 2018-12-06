@@ -49,6 +49,7 @@ private:
 
 	bool m_asteroidInPlay{ false }; // To check if the asteroid is in play
 	bool m_gameOver{ false }; // To check if the game is in progress/to end the game
+	bool m_coolStuffOn{ false }; // Bool to check if cool graphics and effects are enabled
 	bool m_exitGame; // control exiting game
 
 	sf::RenderWindow m_window; // main SFML window
@@ -66,6 +67,7 @@ private:
 	sf::RectangleShape m_base; // Base shape
 	sf::RectangleShape m_altitudeBar; // Altitude bar shape
 	sf::CircleShape m_explosion; // Missile explosion shape
+
 	sf::VertexArray m_missile{ sf::Lines }; // Missile array
 	sf::VertexArray m_asteroid{ sf::Lines }; // Asteroid array
 

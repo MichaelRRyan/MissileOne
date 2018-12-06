@@ -86,6 +86,10 @@ void Game::processEvents()
 			{
 				m_exitGame = true;
 			}
+			if (sf::Keyboard::T == event.key.code) // Toggle the cool effects and graphics
+			{
+				m_coolStuffOn = !m_coolStuffOn;
+			}
 		}
 		if (sf::Event::MouseButtonPressed == event.type) // User mouse press
 		{
@@ -111,24 +115,27 @@ void Game::update(sf::Time t_deltaTime)
 
 		if (m_currentMissileState == MissileStates::FiredMissile)
 		{
-			updateMissile();
+			updateMissile(); // Update the missile if the missile is active
 		}
 		else if (m_currentMissileState == MissileStates::Explosion)
 		{
-			updateExplosion();
+			updateExplosion(); // Update the explosion is the explosion is active
 		}
 
-		if (!m_asteroidInPlay) // Launch the asteroid if there are none in play
+		if (!m_asteroidInPlay)
 		{
-			launchAsteroid();
+			launchAsteroid(); // Launch the asteroid if there are none in play
 		}
-		else // Move the asteroid
+		else
 		{
-			updateAsteroid();
+			updateAsteroid(); // Move the asteroid if the asteroid is active
 		}
 	}
 
-	m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
+	if (m_coolStuffOn)
+	{
+		m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
+	}
 }
 
 /// <summary>
@@ -140,7 +147,10 @@ void Game::render()
 	m_window.draw(m_ground);
 
 	// Draw the sprites
-	//m_window.draw(m_skylineSprite);
+	if (m_coolStuffOn)
+	{
+		m_window.draw(m_skylineSprite);
+	}
 
 	m_window.draw(m_base);
 	m_window.draw(m_altitudeBar);
@@ -161,11 +171,15 @@ void Game::render()
 
 	// Draw the text
 	m_window.draw(m_altitudeText);
-	m_window.draw(m_scoreText);
+
+	if (m_coolStuffOn)
+	{
+		m_window.draw(m_scoreText);
+	}
 
 	if (m_gameOver)
 	{
-		m_window.draw(m_gameOverText);
+		m_window.draw(m_gameOverText); // If the gmae is over display the game over text
 	}
 
 	m_window.display();
@@ -241,14 +255,18 @@ void Game::setupShapes()
 // Process all input from the mouse
 void Game::processMouseEvents(sf::Event t_mouseEvent)
 {
-	if (sf::Mouse::Left == t_mouseEvent.mouseButton.button)
+	if (m_currentMissileState == MissileStates::ReadyToFire)
 	{
-		if (m_currentMissileState == MissileStates::ReadyToFire)
+		if (sf::Mouse::Left == t_mouseEvent.mouseButton.button)
 		{
-			m_missileDestination = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) };
+		
+			m_missileDestination = sf::Vector2f{ static_cast<float>(t_mouseEvent.mouseButton.x), static_cast<float>(t_mouseEvent.mouseButton.y) }; // Get the player's click location
+
+			// Initiate the missile to avoid flickering effect
 			m_missilePosition = sf::Vector2f{ 400.0f, GROUND_HEIGHT }; // Set the missile's start position to the base position
 			m_missile[1] = sf::Vertex{ m_missilePosition, sf::Color::Red }; // Set the missile's line start position
 
+			// Find the velocity
 			sf::Vector2f distanceVector = m_missileDestination - sf::Vector2f{ 400.0f, GROUND_HEIGHT }; // Find the disance vector between the click point and the base
 			m_missileVelocity = vectorUnitVector(distanceVector) * MISSILE_SPEED; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
@@ -267,12 +285,17 @@ void Game::updateMissile()
 	}
 	else // once the missile reaches it's end position
 	{
-		m_explosion.setPosition(m_missilePosition);
+		m_explosion.setPosition(m_missilePosition); // Set the explosion's start position
+
+		// Initiate the explosion to avoid flickering effect
 		m_explosionSize = 0; // Reset the explosion size
 		m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
 		m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
-		m_missilePower = 0;
-		m_currentMissileState = MissileStates::Explosion;
+
+		
+		m_missilePower = 0; // Reset the missile's power
+
+		m_currentMissileState = MissileStates::Explosion; // Switch to the explosion state
 		
 	}
 }
@@ -280,6 +303,7 @@ void Game::updateMissile()
 // Update the explosion and collision
 void Game::updateExplosion()
 {
+	// Increase the explosion size
 	m_explosionSize++; // Increase the explosions radius size
 	m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
 	m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
@@ -289,10 +313,11 @@ void Game::updateExplosion()
 		if (checkCollisions()) // If colliding with the asteroid
 		{
 			int minimumTime = 120 - m_score; // Set a minimum time for the asteroid to spawn, this will also decrease the maximum time
-			if (minimumTime < 0) // If the time is a negative value, make it zero
+			if (minimumTime < 0)
 			{
-				minimumTime = 0;
+				minimumTime = 0; // If the time is a negative value, make it zero
 			}
+
 			m_asteroidInPlay = false; // Set the asteroid to no longer in play
 			m_asteroidLaunchTime = rand() % 90 + minimumTime; // Set the asteroid launch time to a random number based on the player's current score
 			m_score += 5; // Add to the score when an asteroid is destroyed
@@ -310,7 +335,7 @@ void Game::launchAsteroid()
 {
 	if (m_asteroidLaunchTime > 0)
 	{
-		m_asteroidLaunchTime--;
+		m_asteroidLaunchTime--; // Count down the asteroid launch time
 	}
 	else
 	{
@@ -349,9 +374,9 @@ void Game::updateAsteroid()
 bool Game::checkCollisions()
 {
 	bool isColliding{ false }; // The bool that will be returned
-	sf::Vector2f distanceVector = m_asteroidPosition - m_explosion.getPosition(); // Find the distance vector between the asteroid and the explosion
+	sf::Vector2f distanceVector = m_asteroidPosition - m_missilePosition; // Find the distance vector between the asteroid and the explosion
 
-	if (vectorLengthSquared(distanceVector) < m_explosion.getRadius() * m_explosion.getRadius()) // Check of the distance length squared is less than the radius squared
+	if (vectorLengthSquared(distanceVector) < m_explosionSize * m_explosionSize) // Check of the distance length squared is less than the radius squared
 	{
 		isColliding = true;
 	}
