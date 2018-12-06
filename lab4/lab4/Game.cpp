@@ -13,6 +13,7 @@
 // Extra fun stuff
 // Estimated time: 120m
 // Session 7: 22:20 - 22:40 - 05/12/2018
+// Session 7: 22:41 - 23:35 - 06/12/2018
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 // Known bugs:
 // - None
@@ -32,7 +33,7 @@ Game::Game() :
 	m_currentMissileState{ MissileStates::ReadyToFire }
 {
 	setupFontAndText(); // load font 
-	setupSprite(); // load texture
+	setupSprites(); // load texture
 	setupShapes(); // Setup the shapes and lines
 }
 
@@ -108,34 +109,33 @@ void Game::update(sf::Time t_deltaTime)
 	{
 		m_window.close();
 	}
-
-	if (!m_gameOver) // If the game hasn't ended, do the main game updates
+	// If the game hasn't ended, do the main game updates
+	if (!m_gameOver)
 	{
-		updateAltitudeBar(); // Update the altitude/missile power bar
+		updateAltitudeBar();// Update the altitude/missile power bar
 
-		if (m_currentMissileState == MissileStates::FiredMissile)
+		if (m_currentMissileState == MissileStates::FiredMissile) // Update the missile if the missile is active
 		{
-			updateMissile(); // Update the missile if the missile is active
+			updateMissile(); 
 		}
-		else if (m_currentMissileState == MissileStates::Explosion)
+		else if (m_currentMissileState == MissileStates::Explosion) // Update the explosion is the explosion is active
 		{
-			updateExplosion(); // Update the explosion is the explosion is active
+			updateExplosion(); 
 		}
-
-		if (!m_asteroidInPlay)
+		if (!m_asteroidInPlay) // Launch the asteroid if there are none in play
 		{
-			launchAsteroid(); // Launch the asteroid if there are none in play
+			launchAsteroid();
 		}
-		else
+		else  // Move the asteroid if the asteroid is active
 		{
-			updateAsteroid(); // Move the asteroid if the asteroid is active
+			updateAsteroid();
 		}
 	}
 
+	// If the cool stuff have been toggled
 	if (m_coolStuffOn)
 	{
-		m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
-		updateExtraStuff();
+		updateExtraEffects(); // update the cool stuff
 	}
 }
 
@@ -145,15 +145,18 @@ void Game::update(sf::Time t_deltaTime)
 void Game::render()
 {
 	m_window.clear();
-	m_window.draw(m_ground);
 
-	// Draw the sprites
 	if (m_coolStuffOn)
 	{
+		m_window.draw(m_backgroundSprite);
 		m_window.draw(m_skylineSprite);
 	}
+	else
+	{
+		m_window.draw(m_ground);
+		m_window.draw(m_base);
+	}
 
-	m_window.draw(m_base);
 	m_window.draw(m_altitudeBar);
 
 	// Draw the asteroid and missile stuff
@@ -173,6 +176,7 @@ void Game::render()
 	// Draw the text
 	m_window.draw(m_altitudeText);
 
+	// Draw the extra graphics
 	if (m_coolStuffOn)
 	{
 		m_window.draw(m_scoreText);
@@ -190,7 +194,7 @@ void Game::render()
 
 	if (m_gameOver)
 	{
-		m_window.draw(m_gameOverText); // If the gmae is over display the game over text
+		m_window.draw(m_gameOverText); // If the game is over display the game over text
 	}
 
 	m_window.display();
@@ -307,7 +311,11 @@ void Game::updateMissile()
 		m_missilePower = 0; // Reset the missile's power
 
 		m_currentMissileState = MissileStates::Explosion; // Switch to the explosion state
-		
+
+		if (m_coolStuffOn) // If the extra cool effects have been enabled
+		{
+			m_screenShakeTimer = 30; // Shake the screen for 30 seconds
+		}
 	}
 }
 
@@ -412,7 +420,7 @@ void Game::updateAltitudeBar()
 /// <summary>
 /// load the texture and setup the sprite for the logo
 /// </summary>
-void Game::setupSprite()
+void Game::setupSprites()
 {
 	if (!m_skylineTexture.loadFromFile("ASSETS\\IMAGES\\skyline.png"))
 	{
@@ -432,22 +440,43 @@ void Game::setupSprite()
 		std::cout << "problem loading meteor" << std::endl;
 	}
 
+	if (!m_backgroundTexture.loadFromFile("ASSETS\\IMAGES\\background.png"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading background" << std::endl;
+	}
+
 	m_skylineSprite.setTexture(m_skylineTexture);
 	m_skylineSprite.setPosition(0.0f, 390.0f);
 
 	m_rocketSprite.setTexture(m_rocketTexture);
-	m_rocketSprite.setPosition(200.0f, 200.0f);
 	m_rocketSprite.setOrigin(m_rocketSprite.getGlobalBounds().width - 10, m_rocketSprite.getGlobalBounds().height / 2);
-	m_rocketSprite.setScale(0.05f, 0.05f);
+	m_rocketSprite.setScale(0.5f, 0.5f);
 
 	m_meteorSprite.setTexture(m_meteorTexture);
-	m_meteorSprite.setPosition(400.0f, 200.0f);
+	m_meteorSprite.setTextureRect(sf::IntRect{ 0, 0, 119, 46 });
 	m_meteorSprite.setOrigin(m_meteorSprite.getGlobalBounds().width - 10, m_meteorSprite.getGlobalBounds().height / 2);
-	m_meteorSprite.setScale(0.05f, 0.05f);
+	m_meteorSprite.setScale(0.5f, 0.5f);
+
+	m_backgroundSprite.setTexture(m_backgroundTexture);
+	m_backgroundSprite.setPosition(0.0f, 0.0f);
 }
 
-void Game::updateExtraStuff()
+void Game::updateExtraEffects()
 {
+	m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
+
+	// increment the frame timer
+	if (m_frameTimer < 60)
+	{
+		m_frameTimer++;
+	}
+	else
+	{
+		m_frameTimer = 0;
+	}
+
+	// Update the rocket sprite
 	if (m_currentMissileState == MissileStates::FiredMissile)
 	{
 		float rocketAngle = atan2f(m_missileVelocity.y, m_missileVelocity.x) * 180 / 3.14159;
@@ -456,11 +485,36 @@ void Game::updateExtraStuff()
 		m_rocketSprite.setPosition(m_missilePosition);
 	}
 
+	// Update the asteroid sprite
 	if (m_asteroidInPlay)
 	{
 		float asteroidAngle = atan2f(m_asteroidVelocity.y, m_asteroidVelocity.x) * 180 / 3.14159;
 		m_meteorSprite.setRotation(asteroidAngle);
 
 		m_meteorSprite.setPosition(m_asteroidPosition);
+
+		// Animate the asteroid
+		if (m_frameTimer % 20 > 10)
+		{
+			m_meteorSprite.setTextureRect(sf::IntRect{ 119, 0, 119, 46 });
+		}
+		else
+		{
+			m_meteorSprite.setTextureRect(sf::IntRect{ 0, 0, 119, 46 });
+		}
+	}
+
+	if (m_screenShakeTimer > 0)
+	{
+		viewShake();
+		m_screenShakeTimer--;
+	}
+}
+
+void Game::viewShake()
+{
+	if (m_screenShakeTimer % 3 > 1) // Only shake the screen every three frames
+	{
+		m_window.setView(sf::View{ sf::FloatRect(static_cast<float>(rand() % 16 - 8), static_cast<float>(rand() % 16 - 8), m_window.getSize().x, m_window.getSize().y) });
 	}
 }

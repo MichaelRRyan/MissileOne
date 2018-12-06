@@ -34,7 +34,6 @@ private:
 	void render();
 
 	void setupFontAndText();
-	void setupSprite();
 	void setupShapes();
 
 	void launchAsteroid();
@@ -44,7 +43,10 @@ private:
 	void updateAltitudeBar();
 	bool checkCollisions();
 
-	void updateExtraStuff();
+	// Extra fun stuff
+	void setupSprites();
+	void updateExtraEffects();
+	void viewShake();
 
 	// Declare the enums and bools
 	MissileStates m_currentMissileState{}; // A enum variable of the missile state
@@ -59,15 +61,6 @@ private:
 	sf::Text m_altitudeText; // text used for altitude
 	sf::Text m_scoreText; // Text used for the player's score
 	sf::Text m_gameOverText; // Text object used to display the game over text
-
-	// Declare textures and sprites
-	sf::Texture m_skylineTexture;
-	sf::Texture m_rocketTexture;
-	sf::Texture m_meteorTexture;
-
-	sf::Sprite m_skylineSprite;
-	sf::Sprite m_rocketSprite;
-	sf::Sprite m_meteorSprite;
 
 	// Declare shapes and lines
 	sf::RectangleShape m_ground; // Ground plain shape
@@ -93,6 +86,23 @@ private:
 	int m_score{ 0 }; // The players score
 	int m_asteroidLaunchTime{ 20 }; // The launch time for the asteroid. Set to 20 frames for the first asteroid
 	
+	// == Extra effects ==
+
+	// Declare textures and sprites
+	sf::Texture m_skylineTexture;
+	sf::Texture m_rocketTexture;
+	sf::Texture m_meteorTexture;
+	sf::Texture m_backgroundTexture;
+
+	sf::Sprite m_skylineSprite;
+	sf::Sprite m_rocketSprite;
+	sf::Sprite m_meteorSprite;
+	sf::Sprite m_backgroundSprite;
+
+	// Declare variables
+	int m_frameTimer{ 0 }; // Counts up to one second in frames then resets for use in effects
+
+	int m_screenShakeTimer{ 0 }; // The amount of frames the screen will shake for
 
 };
 
