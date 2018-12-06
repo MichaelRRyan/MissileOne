@@ -44,6 +44,8 @@ private:
 	void updateAltitudeBar();
 	bool checkCollisions();
 
+	void updateExtraStuff();
+
 	// Declare the enums and bools
 	MissileStates m_currentMissileState{}; // A enum variable of the missile state
 
@@ -60,7 +62,12 @@ private:
 
 	// Declare textures and sprites
 	sf::Texture m_skylineTexture;
+	sf::Texture m_rocketTexture;
+	sf::Texture m_meteorTexture;
+
 	sf::Sprite m_skylineSprite;
+	sf::Sprite m_rocketSprite;
+	sf::Sprite m_meteorSprite;
 
 	// Declare shapes and lines
 	sf::RectangleShape m_ground; // Ground plain shape

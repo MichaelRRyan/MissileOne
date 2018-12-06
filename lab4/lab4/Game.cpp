@@ -135,6 +135,7 @@ void Game::update(sf::Time t_deltaTime)
 	if (m_coolStuffOn)
 	{
 		m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
+		updateExtraStuff();
 	}
 }
 
@@ -175,6 +176,16 @@ void Game::render()
 	if (m_coolStuffOn)
 	{
 		m_window.draw(m_scoreText);
+
+		if (m_asteroidInPlay)
+		{
+			m_window.draw(m_meteorSprite);
+		}
+
+		if (m_currentMissileState == MissileStates::FiredMissile)
+		{
+			m_window.draw(m_rocketSprite);
+		}
 	}
 
 	if (m_gameOver)
@@ -406,8 +417,50 @@ void Game::setupSprite()
 	if (!m_skylineTexture.loadFromFile("ASSETS\\IMAGES\\skyline.png"))
 	{
 		// simple error message if previous call fails
-		std::cout << "problem loading logo" << std::endl;
+		std::cout << "problem loading skyline" << std::endl;
 	}
+
+	if (!m_rocketTexture.loadFromFile("ASSETS\\IMAGES\\rocket.png"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading rocket" << std::endl;
+	}
+
+	if (!m_meteorTexture.loadFromFile("ASSETS\\IMAGES\\meteor.png"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading meteor" << std::endl;
+	}
+
 	m_skylineSprite.setTexture(m_skylineTexture);
 	m_skylineSprite.setPosition(0.0f, 390.0f);
+
+	m_rocketSprite.setTexture(m_rocketTexture);
+	m_rocketSprite.setPosition(200.0f, 200.0f);
+	m_rocketSprite.setOrigin(m_rocketSprite.getGlobalBounds().width - 10, m_rocketSprite.getGlobalBounds().height / 2);
+	m_rocketSprite.setScale(0.05f, 0.05f);
+
+	m_meteorSprite.setTexture(m_meteorTexture);
+	m_meteorSprite.setPosition(400.0f, 200.0f);
+	m_meteorSprite.setOrigin(m_meteorSprite.getGlobalBounds().width - 10, m_meteorSprite.getGlobalBounds().height / 2);
+	m_meteorSprite.setScale(0.05f, 0.05f);
+}
+
+void Game::updateExtraStuff()
+{
+	if (m_currentMissileState == MissileStates::FiredMissile)
+	{
+		float rocketAngle = atan2f(m_missileVelocity.y, m_missileVelocity.x) * 180 / 3.14159;
+		m_rocketSprite.setRotation(rocketAngle);
+
+		m_rocketSprite.setPosition(m_missilePosition);
+	}
+
+	if (m_asteroidInPlay)
+	{
+		float asteroidAngle = atan2f(m_asteroidVelocity.y, m_asteroidVelocity.x) * 180 / 3.14159;
+		m_meteorSprite.setRotation(asteroidAngle);
+
+		m_meteorSprite.setPosition(m_asteroidPosition);
+	}
 }
