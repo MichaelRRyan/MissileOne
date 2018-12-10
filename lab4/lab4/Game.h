@@ -45,8 +45,10 @@ private:
 
 	// Extra fun stuff
 	void setupSprites();
+	void SetupAudio();
 	void updateExtraEffects();
 	void viewShake();
+	void setSpriteAngle(sf::Sprite & t_sprite, sf::Vector2f t_velocity);
 
 	// Declare the enums and bools
 	MissileStates m_currentMissileState{}; // A enum variable of the missile state
@@ -93,11 +95,13 @@ private:
 	sf::Texture m_rocketTexture;
 	sf::Texture m_meteorTexture;
 	sf::Texture m_backgroundTexture;
+	sf::Texture m_explosionTexture;
 
 	sf::Sprite m_skylineSprite;
 	sf::Sprite m_rocketSprite;
 	sf::Sprite m_meteorSprite;
 	sf::Sprite m_backgroundSprite;
+	sf::Sprite m_explosionSprite;
 
 	// Declare variables
 	int m_frameTimer{ 0 }; // Counts up to one second in frames then resets for use in effects

@@ -35,6 +35,7 @@ Game::Game() :
 	setupFontAndText(); // load font 
 	setupSprites(); // load texture
 	setupShapes(); // Setup the shapes and lines
+	SetupAudio();
 }
 
 /// <summary>
@@ -89,6 +90,12 @@ void Game::processEvents()
 			}
 			if (sf::Keyboard::T == event.key.code) // Toggle the cool effects and graphics
 			{
+				if (!m_coolStuffOn) // If the extra effects are being turned on, initialise the sprites' angle
+				{
+					setSpriteAngle(m_rocketSprite, m_missileVelocity);
+					setSpriteAngle(m_meteorSprite, m_asteroidVelocity);
+				}
+
 				m_coolStuffOn = !m_coolStuffOn;
 			}
 		}
@@ -190,6 +197,11 @@ void Game::render()
 		{
 			m_window.draw(m_rocketSprite);
 		}
+
+		if (m_currentMissileState == MissileStates::Explosion)
+		{
+			m_window.draw(m_explosionSprite);
+		}
 	}
 
 	if (m_gameOver)
@@ -286,6 +298,13 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 			m_missileVelocity = vectorUnitVector(distanceVector) * MISSILE_SPEED; // Find the velocity using the unit vector of the distance vector and a scalar value for speed
 
 			m_currentMissileState = MissileStates::FiredMissile; // Change the missile state
+
+			// Setup the sprite for the extra effects
+			if (m_coolStuffOn)
+			{
+				setSpriteAngle(m_rocketSprite, m_missileVelocity);
+			}
+			
 		}
 	}
 }
@@ -371,6 +390,12 @@ void Game::launchAsteroid()
 		m_asteroid[0] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
 		m_asteroid[1] = sf::Vertex{ m_asteroidPosition, sf::Color::White };
 		m_asteroidInPlay = true;
+
+		// Setup the sprite for the extra effects
+		if (m_coolStuffOn)
+		{
+			setSpriteAngle(m_meteorSprite, m_asteroidVelocity);
+		}
 	}
 }
 
@@ -418,7 +443,7 @@ void Game::updateAltitudeBar()
 }
 
 /// <summary>
-/// load the texture and setup the sprite for the logo
+/// load the textures and setup the sprites
 /// </summary>
 void Game::setupSprites()
 {
@@ -446,6 +471,12 @@ void Game::setupSprites()
 		std::cout << "problem loading background" << std::endl;
 	}
 
+	if (!m_explosionTexture.loadFromFile("ASSETS\\IMAGES\\explosion.png"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading explosion" << std::endl;
+	}
+
 	m_skylineSprite.setTexture(m_skylineTexture);
 	m_skylineSprite.setPosition(0.0f, 390.0f);
 
@@ -460,8 +491,18 @@ void Game::setupSprites()
 
 	m_backgroundSprite.setTexture(m_backgroundTexture);
 	m_backgroundSprite.setPosition(0.0f, 0.0f);
+
+	m_explosionSprite.setTexture(m_explosionTexture);
+	m_explosionSprite.setPosition(300, 300);
 }
 
+// Setup the load and setup the audio
+void Game::SetupAudio()
+{
+
+}
+
+// Updates the extra effects of the game
 void Game::updateExtraEffects()
 {
 	m_scoreText.setString("Score: " + std::to_string(m_score)); // Update the score text
@@ -479,18 +520,12 @@ void Game::updateExtraEffects()
 	// Update the rocket sprite
 	if (m_currentMissileState == MissileStates::FiredMissile)
 	{
-		float rocketAngle = atan2f(m_missileVelocity.y, m_missileVelocity.x) * 180 / 3.14159;
-		m_rocketSprite.setRotation(rocketAngle);
-
 		m_rocketSprite.setPosition(m_missilePosition);
 	}
 
 	// Update the asteroid sprite
 	if (m_asteroidInPlay)
 	{
-		float asteroidAngle = atan2f(m_asteroidVelocity.y, m_asteroidVelocity.x) * 180 / 3.14159;
-		m_meteorSprite.setRotation(asteroidAngle);
-
 		m_meteorSprite.setPosition(m_asteroidPosition);
 
 		// Animate the asteroid
@@ -511,10 +546,20 @@ void Game::updateExtraEffects()
 	}
 }
 
+// Shakes the screen for a preset amount time
 void Game::viewShake()
 {
 	if (m_screenShakeTimer % 3 > 1) // Only shake the screen every three frames
 	{
-		m_window.setView(sf::View{ sf::FloatRect(static_cast<float>(rand() % 16 - 8), static_cast<float>(rand() % 16 - 8), m_window.getSize().x, m_window.getSize().y) });
+		m_window.setView(sf::View{ sf::FloatRect(static_cast<float>(rand() % 16 - 8), static_cast<float>(rand() % 16 - 8), static_cast<float>(m_window.getSize().x), static_cast<float>(m_window.getSize().y)) });
 	}
+}
+
+// Finds and sets the angle of a sprite
+void Game::setSpriteAngle(sf::Sprite & t_sprite, sf::Vector2f t_velocity)
+{
+	float angleRad = atan2f(t_velocity.y, t_velocity.x); // Finds the angle the object is going in radians
+	float angleDeg = angleRad * 180 / PI; // Converts the angle to degrees
+
+	t_sprite.setRotation(angleDeg); // Sets the angle of the sprite
 }
