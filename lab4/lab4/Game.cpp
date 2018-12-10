@@ -13,10 +13,14 @@
 // Extra fun stuff
 // Estimated time: 120m
 // Session 7: 22:20 - 22:40 - 05/12/2018
-// Session 7: 22:41 - 23:35 - 06/12/2018
+// Session 8: 22:41 - 23:35 - 06/12/2018
+// Session 9: 17:01 - 17:57 - 10/12/2018
+// Time taken to add extra stuff:  130m
+// Total time overall: 353m
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// Known bugs:
-// - None
+// Known bugs or notes:
+// - No known bugs but more code could have been simplified/put into functions and some
+// constants could have had a smaller scope.
 
 #include "Game.h"
 #include "MyVector2.h"
@@ -303,6 +307,7 @@ void Game::processMouseEvents(sf::Event t_mouseEvent)
 			if (m_coolStuffOn)
 			{
 				setSpriteAngle(m_rocketSprite, m_missileVelocity);
+				m_launchSound.play();
 			}
 			
 		}
@@ -334,7 +339,10 @@ void Game::updateMissile()
 		if (m_coolStuffOn) // If the extra cool effects have been enabled
 		{
 			m_screenShakeTimer = 30; // Shake the screen for 30 seconds
+			m_explosionSound.play();
 		}
+		m_explosionSprite.setPosition(m_missilePosition);
+		m_explosionSprite.setScale(0.35f, 0.35f); // Set the explosion to a scale similar to the circle explosion
 	}
 }
 
@@ -345,6 +353,12 @@ void Game::updateExplosion()
 	m_explosionSize++; // Increase the explosions radius size
 	m_explosion.setRadius(m_explosionSize); // Set the radius of the explosion to the new increased value
 	m_explosion.setOrigin(m_explosionSize, m_explosionSize); // Set the origin of the circle to keep it centred
+
+
+	if (m_coolStuffOn) // Animates the explosion effect if the extra effects are enabled
+	{
+		animateExplosion();
+	}
 
 	if (m_asteroidInPlay) // If the asteroid is in play, check collisions
 	{
@@ -494,12 +508,31 @@ void Game::setupSprites()
 
 	m_explosionSprite.setTexture(m_explosionTexture);
 	m_explosionSprite.setPosition(300, 300);
+	m_explosionSprite.setScale(0.35f, 0.35f); // Set the explosion to a scale similar to the circle explosion
+	m_explosionSprite.setOrigin(73, 73);
 }
 
 // Setup the load and setup the audio
 void Game::SetupAudio()
 {
+	// Load the sound files
+	if (!m_explosionBuffer.loadFromFile("ASSETS\\AUDIO\\explosion.wav"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading explosion sound" << std::endl;
+	}
 
+	// Load the sound files
+	if (!m_launchBuffer.loadFromFile("ASSETS\\AUDIO\\rocket_launch.wav"))
+	{
+		// simple error message if previous call fails
+		std::cout << "problem loading rocket launch sound" << std::endl;
+	}
+
+	// Assign the buffers
+	m_explosionSound.setBuffer(m_explosionBuffer);
+
+	m_launchSound.setBuffer(m_launchBuffer);
 }
 
 // Updates the extra effects of the game
@@ -562,4 +595,10 @@ void Game::setSpriteAngle(sf::Sprite & t_sprite, sf::Vector2f t_velocity)
 	float angleDeg = angleRad * 180 / PI; // Converts the angle to degrees
 
 	t_sprite.setRotation(angleDeg); // Sets the angle of the sprite
+}
+
+void Game::animateExplosion()
+{
+	float explosionScale = m_explosionSize / 35.0f;
+	m_explosionSprite.setScale(explosionScale, explosionScale);
 }

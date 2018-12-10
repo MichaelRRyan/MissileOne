@@ -3,6 +3,7 @@
 #define GAME
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <cstdlib>
 #include <ctime>
 
@@ -49,6 +50,7 @@ private:
 	void updateExtraEffects();
 	void viewShake();
 	void setSpriteAngle(sf::Sprite & t_sprite, sf::Vector2f t_velocity);
+	void animateExplosion();
 
 	// Declare the enums and bools
 	MissileStates m_currentMissileState{}; // A enum variable of the missile state
@@ -102,6 +104,13 @@ private:
 	sf::Sprite m_meteorSprite;
 	sf::Sprite m_backgroundSprite;
 	sf::Sprite m_explosionSprite;
+
+	// Declare audio
+	sf::SoundBuffer m_explosionBuffer;
+	sf::SoundBuffer m_launchBuffer;
+	
+	sf::Sound m_explosionSound;
+	sf::Sound m_launchSound;
 
 	// Declare variables
 	int m_frameTimer{ 0 }; // Counts up to one second in frames then resets for use in effects
